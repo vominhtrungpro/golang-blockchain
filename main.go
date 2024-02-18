@@ -14,8 +14,8 @@ type CommandLine struct{}
 
 func (cli *CommandLine) printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println(" getbalance -address ADDRESS - get the balance for an address")
-	fmt.Println(" createblockchain -address ADDRESS creates a blockchain and sends genesis reward to address")
+	fmt.Println(" getbalance -address ADDRESS - Get the balance for an address")
+	fmt.Println(" createblockchain - Creates a blockchain and sends genesis reward to address")
 	fmt.Println(" printchain - Prints the blocks in the chain")
 	fmt.Println(" send -from FROM -to TO -amount AMOUNT - Send amount of coins")
 }
@@ -47,8 +47,8 @@ func (cli *CommandLine) printChain() {
 	}
 }
 
-func (cli *CommandLine) createBlockChain(address string) {
-	chain := blockchain.InitBlockChain(address)
+func (cli *CommandLine) createBlockChain() {
+	chain := blockchain.InitBlockChain()
 	defer chain.Database.Close()
 	fmt.Println("Finished!")
 }
@@ -85,7 +85,6 @@ func (cli *CommandLine) run() {
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
-	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
 	sendFrom := sendCmd.String("from", "", "Source wallet address")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
@@ -117,11 +116,7 @@ func (cli *CommandLine) run() {
 	}
 
 	if createBlockchainCmd.Parsed() {
-		if *createBlockchainAddress == "" {
-			createBlockchainCmd.Usage()
-			runtime.Goexit()
-		}
-		cli.createBlockChain(*createBlockchainAddress)
+		cli.createBlockChain()
 	}
 
 	if printChainCmd.Parsed() {

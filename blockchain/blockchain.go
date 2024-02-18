@@ -33,7 +33,7 @@ func DBexists() bool {
 	return true
 }
 
-func InitBlockChain(address string) *BlockChain {
+func InitBlockChain() *BlockChain {
 	var lastHash []byte
 
 	if DBexists() {
@@ -46,31 +46,8 @@ func InitBlockChain(address string) *BlockChain {
 	db, err := badger.Open(opts)
 	Handle(err)
 
-	// err = db.Update(func(txn *badger.Txn) error {
-	// 	if _, err := txn.Get([]byte("lh")); err == badger.ErrKeyNotFound {
-	// 		fmt.Println("No existing blockchain found")
-	// 		genesis := Genesis()
-	// 		fmt.Println("Genesis proved")
-	// 		err = txn.Set(genesis.Hash, genesis.Serialize())
-	// 		Handle(err)
-	// 		err = txn.Set([]byte("lh"), genesis.Hash)
-
-	// 		lastHash = genesis.Hash
-
-	// 		return err
-	// 	} else {
-	// 		item, err := txn.Get([]byte("lh"))
-	// 		Handle(err)
-	// 		err = item.Value(func(val []byte) error {
-	// 			lastHash = val
-	// 			return nil
-	// 		})
-	// 		return err
-	// 	}
-	// })
-
 	err = db.Update(func(txn *badger.Txn) error {
-		cbtx := CoinbaseTx(address, genesisData)
+		cbtx := CoinbaseTx("Genesis", genesisData)
 		genesis := Genesis(cbtx)
 		fmt.Println("Genesis created")
 		err = txn.Set(genesis.Hash, genesis.Serialize())
@@ -89,7 +66,7 @@ func InitBlockChain(address string) *BlockChain {
 }
 
 func ContinueBlockChain(address string) *BlockChain {
-	if DBexists() == false {
+	if !DBexists() {
 		fmt.Println("No exist blockchain found, create one!")
 		runtime.Goexit()
 	}
@@ -197,7 +174,7 @@ func (chain *BlockChain) FindUnspentTransactions(address string) []Transaction {
 					unspentTxs = append(unspentTxs, *tx)
 				}
 			}
-			if tx.IsCoinbase() == false {
+			if !tx.IsCoinbase() {
 				for _, in := range tx.Inputs {
 					if in.CanUnlock(address) {
 						inTxID := hex.EncodeToString(in.ID)
