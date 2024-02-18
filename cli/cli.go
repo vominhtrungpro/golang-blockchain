@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/vominhtrungpro/golang-blockchain/blockchain"
+	"github.com/vominhtrungpro/golang-blockchain/wallet"
 )
 
 type CommandLine struct{}
@@ -15,10 +16,12 @@ type CommandLine struct{}
 func (cli *CommandLine) printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println(" getbalance -address ADDRESS - Get the balance for an address")
-	fmt.Println(" createblockchain - Creates a blockchain and sends genesis reward to address")
+	fmt.Println(" createblockchain -address ADDRESS creates a blockchain and sends genesis reward to address")
 	fmt.Println(" printchain - Prints the blocks in the chain")
 	fmt.Println(" send -from FROM -to TO -amount AMOUNT - Send amount of coins")
 	fmt.Println(" dropdatabase - Drop database folder")
+	fmt.Println(" createwallet - Create a new wallet")
+	fmt.Println(" listaddresses - List the addresses in out wallet file")
 }
 
 func (cli *CommandLine) validateArgs() {
@@ -48,9 +51,9 @@ func (cli *CommandLine) printChain() {
 	}
 }
 
-func (cli *CommandLine) createBlockChain() {
-	chain := blockchain.InitBlockChain()
-	defer chain.Database.Close()
+func (cli *CommandLine) createBlockChain(address string) {
+	chain := blockchain.InitBlockChain(address)
+	chain.Database.Close()
 	fmt.Println("Finished!")
 }
 
@@ -81,6 +84,23 @@ func (cli *CommandLine) deleteDatabase() {
 	blockchain.DeleteDatabase()
 }
 
+func (cli *CommandLine) listAddresses() {
+	wallets, _ := wallet.CreateWallets()
+	addresses := wallets.GetAllAddresses()
+
+	for _, address := range addresses {
+		fmt.Println(address)
+	}
+}
+
+func (cli *CommandLine) CreateWallet() {
+	wallets, _ := wallet.CreateWallets()
+	address := wallets.AddWallet()
+	wallets.SaveFile()
+
+	fmt.Printf("New address is: %s\n", address)
+}
+
 func (cli *CommandLine) Run() {
 	cli.validateArgs()
 
@@ -89,8 +109,11 @@ func (cli *CommandLine) Run() {
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 	dropDatabaseCmd := flag.NewFlagSet("dropdatabase", flag.ExitOnError)
+	createWalletCmd := flag.NewFlagSet("createwallet", flag.ExitOnError)
+	listAddressesCmd := flag.NewFlagSet("listaddresses", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
+	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
 	sendFrom := sendCmd.String("from", "", "Source wallet address")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
@@ -98,19 +121,25 @@ func (cli *CommandLine) Run() {
 	switch os.Args[1] {
 	case "getbalance":
 		err := getBalanceCmd.Parse(os.Args[2:])
-		blockchain.Handle(err)
+		Handle(err)
 	case "createblockchain":
 		err := createBlockchainCmd.Parse(os.Args[2:])
-		blockchain.Handle(err)
+		Handle(err)
 	case "printchain":
 		err := printChainCmd.Parse(os.Args[2:])
-		blockchain.Handle(err)
+		Handle(err)
 	case "send":
 		err := sendCmd.Parse(os.Args[2:])
-		blockchain.Handle(err)
+		Handle(err)
 	case "dropdatabase":
 		err := dropDatabaseCmd.Parse(os.Args[2:])
-		blockchain.Handle(err)
+		Handle(err)
+	case "createwallet":
+		err := createWalletCmd.Parse(os.Args[2:])
+		Handle(err)
+	case "listaddresses":
+		err := listAddressesCmd.Parse(os.Args[2:])
+		Handle(err)
 	default:
 		cli.printUsage()
 		runtime.Goexit()
@@ -125,7 +154,11 @@ func (cli *CommandLine) Run() {
 	}
 
 	if createBlockchainCmd.Parsed() {
-		cli.createBlockChain()
+		if *createBlockchainAddress == "" {
+			createBlockchainCmd.Usage()
+			runtime.Goexit()
+		}
+		cli.createBlockChain(*createBlockchainAddress)
 	}
 
 	if printChainCmd.Parsed() {
@@ -143,5 +176,13 @@ func (cli *CommandLine) Run() {
 
 	if dropDatabaseCmd.Parsed() {
 		cli.deleteDatabase()
+	}
+
+	if createWalletCmd.Parsed() {
+		cli.CreateWallet()
+	}
+
+	if listAddressesCmd.Parsed() {
+		cli.listAddresses()
 	}
 }

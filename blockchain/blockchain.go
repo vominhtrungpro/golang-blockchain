@@ -34,7 +34,7 @@ func DBexists() bool {
 	return true
 }
 
-func InitBlockChain() *BlockChain {
+func InitBlockChain(address string) *BlockChain {
 	var lastHash []byte
 
 	if DBexists() {
@@ -48,7 +48,7 @@ func InitBlockChain() *BlockChain {
 	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
-		cbtx := CoinbaseTx("Genesis", genesisData)
+		cbtx := CoinbaseTx(address, genesisData)
 		genesis := Genesis(cbtx)
 		fmt.Println("Genesis created")
 		err = txn.Set(genesis.Hash, genesis.Serialize())
@@ -245,6 +245,8 @@ func DeleteDatabase() error {
 	})
 
 	Handle(err)
+
+	fmt.Println("Drop database success!")
 
 	return nil
 }
