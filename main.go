@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strconv"
 
+	"github.com/dgraph-io/badger/v4"
 	"github.com/vominhtrungpro/golang-blockchain/blockchain"
 )
 
@@ -56,6 +57,7 @@ func (cli *CommandLine) run() {
 
 	addBlockCmd := flag.NewFlagSet("add", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("print", flag.ExitOnError)
+	clearDatabaseCmd := flag.NewFlagSet("clear", flag.ExitOnError)
 	addBlockData := addBlockCmd.String("block", "", "Block data")
 
 	switch os.Args[1] {
@@ -65,6 +67,10 @@ func (cli *CommandLine) run() {
 
 	case "print":
 		err := printChainCmd.Parse(os.Args[2:])
+		blockchain.Handle(err)
+
+	case "clear":
+		err := clearDB(cli.blockchain.Database)
 		blockchain.Handle(err)
 
 	default:
@@ -83,6 +89,30 @@ func (cli *CommandLine) run() {
 	if printChainCmd.Parsed() {
 		cli.printChain()
 	}
+
+	if clearDatabaseCmd.Parsed() {
+		cli.printChain()
+	}
+}
+
+func clearDB(db *badger.DB) error {
+	err := db.Update(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		for it.Rewind(); it.Valid(); it.Next() {
+			err := txn.Delete(it.Item().Key())
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	return err
 }
 
 func main() {
