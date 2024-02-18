@@ -1,10 +1,11 @@
 package wallet
 
 import (
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/pem"
 	"log"
 
 	"golang.org/x/crypto/ripemd160"
@@ -16,7 +17,7 @@ const (
 )
 
 type Wallet struct {
-	PrivateKey ecdsa.PrivateKey
+	PrivateKey rsa.PrivateKey
 	PublicKey  []byte
 }
 
@@ -32,16 +33,26 @@ func (w Wallet) Address() []byte {
 	return address
 }
 
-func NewKeyPair() (ecdsa.PrivateKey, []byte) {
-	curve := elliptic.P256()
-
-	private, err := ecdsa.GenerateKey(curve, rand.Reader)
+func NewKeyPair() (rsa.PrivateKey, []byte) {
+	private, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	pub := append(private.PublicKey.X.Bytes(), private.PublicKey.Y.Bytes()...)
+	pub := publicKeyToBytes(&private.PublicKey)
 	return *private, pub
+}
+
+func publicKeyToBytes(pubKey *rsa.PublicKey) []byte {
+	pubKeyBytes, err := x509.MarshalPKIXPublicKey(pubKey)
+	if err != nil {
+		log.Panic(err)
+	}
+	pemKey := pem.EncodeToMemory(&pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: pubKeyBytes,
+	})
+	return pemKey
 }
 
 func MakeWallet() *Wallet {

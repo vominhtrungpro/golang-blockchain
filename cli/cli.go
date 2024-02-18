@@ -93,7 +93,7 @@ func (cli *CommandLine) listAddresses() {
 	}
 }
 
-func (cli *CommandLine) CreateWallet() {
+func (cli *CommandLine) createWallet() {
 	wallets, _ := wallet.CreateWallets()
 	address := wallets.AddWallet()
 	wallets.SaveFile()
@@ -179,7 +179,7 @@ func (cli *CommandLine) Run() {
 	}
 
 	if createWalletCmd.Parsed() {
-		cli.CreateWallet()
+		cli.createWallet()
 	}
 
 	if listAddressesCmd.Parsed() {
