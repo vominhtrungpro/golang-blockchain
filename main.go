@@ -18,6 +18,7 @@ func (cli *CommandLine) printUsage() {
 	fmt.Println(" createblockchain - Creates a blockchain and sends genesis reward to address")
 	fmt.Println(" printchain - Prints the blocks in the chain")
 	fmt.Println(" send -from FROM -to TO -amount AMOUNT - Send amount of coins")
+	fmt.Println(" dropdatabase - Drop database folder")
 }
 
 func (cli *CommandLine) validateArgs() {
@@ -83,6 +84,7 @@ func (cli *CommandLine) run() {
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
+	dropDatabaseCmd := flag.NewFlagSet("dropdatabase", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
 	sendFrom := sendCmd.String("from", "", "Source wallet address")
@@ -101,6 +103,9 @@ func (cli *CommandLine) run() {
 		blockchain.Handle(err)
 	case "send":
 		err := sendCmd.Parse(os.Args[2:])
+		blockchain.Handle(err)
+	case "dropdatabase":
+		err := dropDatabaseCmd.Parse(os.Args[2:])
 		blockchain.Handle(err)
 	default:
 		cli.printUsage()
@@ -130,6 +135,10 @@ func (cli *CommandLine) run() {
 		}
 
 		cli.send(*sendFrom, *sendTo, *sendAmount)
+	}
+
+	if dropDatabaseCmd.Parsed() {
+		blockchain.DeleteDatabase()
 	}
 }
 

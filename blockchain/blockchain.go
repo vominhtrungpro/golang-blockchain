@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	"github.com/dgraph-io/badger/v4"
@@ -228,4 +229,22 @@ Work:
 	}
 
 	return accumulated, unspentOuts
+}
+
+func DeleteDatabase() error {
+	err := filepath.Walk(dbPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			err := os.Remove(path)
+			Handle(err)
+		}
+		return nil
+	})
+
+	Handle(err)
+
+	return nil
 }
