@@ -6,10 +6,10 @@ import (
 )
 
 type Block struct {
-	Hash        []byte
-	Transaction []*Transaction // each block need to have at least 1 transaction and can have many different transaction
-	PrevHash    []byte
-	Nonce       int
+	Hash         []byte
+	Transactions []*Transaction
+	PrevHash     []byte
+	Nonce        int
 }
 
 // create a block inside block chain
@@ -33,7 +33,7 @@ func (b *Block) HashTransactions() []byte {
 	var txHashes [][]byte
 	var txHash [32]byte
 
-	for _, tx := range b.Transaction {
+	for _, tx := range b.Transactions {
 		txHashes = append(txHashes, tx.ID)
 	}
 

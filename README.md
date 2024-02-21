@@ -10,4 +10,4 @@ drop database : go run main.go dropdatabase
 
 createwallet : go run main.go createwallet
 
-listwallet : go run main.go listwallet
+listwallet : go run main.go listaddresses
